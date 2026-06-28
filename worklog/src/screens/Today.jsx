@@ -109,7 +109,7 @@ export default function Today() {
       )}
 
       {/* Active entry card */}
-      <section className="mt-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
+      <section className="mt-4 rounded-xl bg-surface-light p-4shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
         {loading ? (
           <p className="text-sm text-neutral-400">Loading…</p>
         ) : ongoing ? (
@@ -138,7 +138,7 @@ export default function Today() {
               </button>
               <button
                 onClick={() => setShowFinish(true)}
-                className="min-h-[44px] flex-1 rounded-lg bg-accent-light px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 dark:bg-accent-dark dark:text-neutral-900"
+                className="min-h-[44px] flex-1 rounded-lg bg-secondary px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 dark:bg-secondary dark:text-white"
               >
                 Finished
               </button>
@@ -155,7 +155,7 @@ export default function Today() {
                 onChange={(e) => setStartName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleStart()}
                 placeholder="What are you starting?"
-                className="min-h-[44px] flex-1 rounded-lg border border-neutral-300 bg-white px-3 text-neutral-900 placeholder:text-neutral-400 focus:border-accent-light focus:outline-none focus:ring-2 focus:ring-accent-light/40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                className="min-h-[44px] flex-1 rounded-lg border border-neutral-300 bg-surface-light px-3 text-neutral-900 placeholder:text-neutral-400 focus:border-accent-light focus:outline-none focus:ring-2 focus:ring-accent-light/40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
               />
               <button
                 onClick={handleStart}
@@ -171,7 +171,7 @@ export default function Today() {
 
       {/* Stat tiles */}
       <section className="mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
+        <div className="rounded-xl bg-surface-light p-4shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
           <p className="text-xs uppercase tracking-wide text-neutral-400">
             Tasks today
           </p>
@@ -179,7 +179,7 @@ export default function Today() {
             {taskCount}
           </p>
         </div>
-        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
+        <div className="rounded-xl bg-surface-light p-4shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
           <p className="text-xs uppercase tracking-wide text-neutral-400">
             Breaks today
           </p>
@@ -194,7 +194,7 @@ export default function Today() {
         <h2 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
           Today's timeline
         </h2>
-        <div className="mt-2 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
+        <div className="mt-2 overflow-hidden rounded-xl bg-surface-light shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
           {reportEntries.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-neutral-400">
               Nothing logged yet today. Start a task above.

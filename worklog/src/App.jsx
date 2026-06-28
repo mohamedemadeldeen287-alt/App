@@ -34,7 +34,7 @@ function NavButton({ item, layout }) {
 
 export default function App() {
   return (
-    <div className="min-h-full bg-neutral-50 font-sans text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 md:flex">
+    <div className="min-h-full bg-canvas-light font-sans text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 md:flex">
       {/* Desktop: sidebar nav */}
       <aside className="hidden w-56 shrink-0 border-r border-neutral-200 p-4 dark:border-neutral-800 md:block">
         <div className="px-2 pb-4 text-lg font-semibold">Work Log</div>
@@ -51,7 +51,7 @@ export default function App() {
       </main>
 
       {/* Mobile: bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex gap-1 border-t border-neutral-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95 md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex gap-1 border-t border-neutral-200 bg-surface-light/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95 md:hidden">
         {NAV.map((item) => (
           <NavButton key={item.key} item={item} layout="bottom" />
         ))}

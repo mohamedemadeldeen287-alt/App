@@ -49,7 +49,7 @@ export default function FinishFlow({ entry, onDone, onCancel }) {
       onClick={step === "time" ? onCancel : undefined}
     >
       <div
-        className="w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl dark:bg-neutral-900 sm:rounded-2xl"
+        className="w-full max-w-md rounded-t-2xl bg-surface-light p-5 shadow-xl dark:bg-neutral-900 sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {step === "time" ? (
@@ -66,7 +66,7 @@ export default function FinishFlow({ entry, onDone, onCancel }) {
                 type="datetime-local"
                 value={endLocal}
                 onChange={(e) => setEndLocal(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-neutral-900 focus:border-accent-light focus:outline-none focus:ring-2 focus:ring-accent-light/40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                className="mt-1 w-full rounded-lg border border-neutral-300 bg-surface-light px-3 py-2 text-neutral-900 focus:border-accent-light focus:outline-none focus:ring-2 focus:ring-accent-light/40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
               />
             </label>
             <div className="mt-5 flex justify-end gap-2">
@@ -79,7 +79,7 @@ export default function FinishFlow({ entry, onDone, onCancel }) {
               <button
                 onClick={confirmTime}
                 disabled={busy}
-                className="min-h-[44px] rounded-lg bg-accent-light px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50 dark:bg-accent-dark dark:text-neutral-900"
+                className="min-h-[44px] rounded-lg bg-secondary px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50 dark:bg-secondary dark:text-white"
               >
                 Confirm time
               </button>
@@ -99,7 +99,7 @@ export default function FinishFlow({ entry, onDone, onCancel }) {
               onChange={(e) => setNextName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && chooseNextTask()}
               placeholder="Next task name"
-              className="mt-4 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-neutral-900 placeholder:text-neutral-400 focus:border-accent-light focus:outline-none focus:ring-2 focus:ring-accent-light/40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className="mt-4 w-full rounded-lg border border-neutral-300 bg-surface-light px-3 py-2 text-neutral-900 placeholder:text-neutral-400 focus:border-accent-light focus:outline-none focus:ring-2 focus:ring-accent-light/40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
             />
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
