@@ -5,13 +5,13 @@ daily break budget, and auto-generating an end-of-day report to review and send
 manually. Built with React + Vite, Tailwind, and Supabase. All times are handled
 in **America/New_York**.
 
-> **Status:** Steps 1–2 of a staged build. The clickable **Today** screen
-> (manual task start / finish) is in place, and all time handling now runs
-> through a single `America/New_York` utility (`src/lib/time.js`) — display,
-> the shift-day, and the timestamp picker are anchored to Eastern regardless of
-> the device's timezone. It runs on a localStorage fallback out of the box, and
-> uses Supabase once you add credentials. Later steps add break tracking,
-> nudges, web push, the calendar, and the EOD report generator.
+> **Status:** Steps 1–3 of a staged build. The clickable **Today** screen
+> (manual task start / finish) is in place; all time handling runs through a
+> single `America/New_York` utility (`src/lib/time.js`); and **break tracking**
+> is live — take a break / resume, a paused task timer, a daily budget badge,
+> and budget warnings. It runs on a localStorage fallback out of the box, and
+> uses Supabase once you add credentials. Later steps add nudges, web push, the
+> calendar, and the EOD report generator.
 
 ## Run it locally
 
@@ -55,6 +55,12 @@ flow.
   Dark mode follows your system preference.
 - All times shown in **America/New_York** (header clock, timeline, the finish
   picker, and the shift-day used for "today"), independent of device timezone.
+- **Break tracking**: a red "Take a break" / green "Resume work" control with a
+  live break timer. While on a break the active task's elapsed time is paused
+  (derived from break timestamps). A "Breaks today" badge shows time used
+  against the 1h 42m daily budget, and on-screen warnings fire near the limit
+  (~11 min left) and once over budget. Break data is kept entirely out of the
+  EOD report.
 
 ## Project layout
 
@@ -65,7 +71,9 @@ worklog/
     lib/
       supabase.js       Supabase client (env-driven, optional)
       entries.js        entries data layer (Supabase or localStorage)
-      format.js         display + datetime-local helpers
+      breaks.js         break_log data layer (budget tracking)
+      time.js           America/New_York time utility (single source of truth)
+      format.js         timezone-independent display helpers
       useNow.js         live-tick hook for elapsed timers
     components/FinishFlow.jsx   finish → what's-next modal
     screens/Today.jsx   the Step 1 main screen
