@@ -5,14 +5,15 @@ daily break budget, and auto-generating an end-of-day report to review and send
 manually. Built with React + Vite, Tailwind, and Supabase. All times are handled
 in **America/New_York**.
 
-> **Status:** Steps 1–6 of a staged build. In place: the **Today** screen
+> **Status:** Steps 1–7 of a staged build. In place: the **Today** screen
 > (manual task start / finish); a single `America/New_York` time utility
 > (`src/lib/time.js`); **break tracking**; **in-app nudges** plus **Web Push**
-> notifications with action buttons; and a **Calendar** tab with planned events,
+> notifications with action buttons; a **Calendar** tab with planned events,
 > before/at-time reminders, and a "Did this happen?" confirmation that links
-> into your log. It runs on a localStorage fallback out of the box, and uses
-> Supabase once you add credentials. The remaining step is the EOD report
-> generator (plus dark-mode / PWA polish).
+> into your log; and an **EOD report** generator (Claude-written via an Edge
+> Function, with a local fallback) that you review and send manually. It runs on
+> a localStorage fallback out of the box, and uses Supabase once you add
+> credentials. What's left is polish (PWA install, layout/dark-mode refinements).
 
 ## Run it locally
 
@@ -62,6 +63,22 @@ pushes when the app is fully closed:
 > Notifications target Android Chrome, which supports notification action
 > buttons natively. iOS Safari push is intentionally out of scope.
 
+## Enable Claude-written EOD reports (optional)
+
+The report works out of the box using a local template. For Claude-written
+reports:
+
+1. Set the API key as an Edge Function secret and deploy the function:
+   ```bash
+   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+   supabase functions deploy generate-eod-report
+   ```
+2. With Supabase configured (above), the app calls the function automatically;
+   the "local template" note on the Report screen disappears.
+
+The key stays server-side in the Edge Function — it is never exposed to the
+browser.
+
 ## What works in Step 1
 
 - Start a task (becomes the single active entry).
@@ -101,6 +118,12 @@ pushes when the app is fully closed:
   the log; **No** marks it missed (nothing logged); **Still ongoing** starts a
   linked ongoing task. The list groups events by day with pending / happened /
   missed / ongoing badges.
+- **EOD report**: generate a concise end-of-day report from today's reportable
+  entries. When Supabase + an `ANTHROPIC_API_KEY` are configured it's written by
+  Claude (`claude-opus-4-8`) in the `generate-eod-report` Edge Function;
+  otherwise a local template is used. The draft is fully editable — review it,
+  then **Copy** or **Open in email** (a `mailto:` draft). Nothing is ever sent
+  automatically.
 
 ## Project layout
 
@@ -116,6 +139,7 @@ worklog/
       time.js           America/New_York time utility (single source of truth)
       settings.js       local user settings (nudge interval)
       push.js           service-worker registration + Web Push subscription
+      report.js         EOD report (Edge Function + local fallback)
       format.js         timezone-independent display helpers
       useNow.js         live-tick hook for elapsed timers
     components/
@@ -126,9 +150,11 @@ worklog/
     screens/
       Today.jsx         the main screen
       Calendar.jsx      planned events + reminders
+      Report.jsx        EOD report review screen
     App.jsx             adaptive nav shell + reminder scheduler
   public/sw.js          service worker (push + notification actions)
   supabase/
     schema.sql          full DB schema (all tables, for later steps too)
-    functions/send-nudge-push/  Edge Function to deliver Web Push
+    functions/send-nudge-push/      Edge Function to deliver Web Push
+    functions/generate-eod-report/  Edge Function: Claude-written EOD report
 ```

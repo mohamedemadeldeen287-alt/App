@@ -51,7 +51,7 @@ function breakSeconds(b, nowMs) {
   return Math.max(0, (nowMs - Date.parse(b.start_time)) / 1000);
 }
 
-export default function Today({ reloadSignal = 0 }) {
+export default function Today({ reloadSignal = 0, onGenerateReport }) {
   const [entries, setEntries] = useState([]);
   const [ongoing, setOngoing] = useState(null);
   const [todayBreaks, setTodayBreaks] = useState([]);
@@ -524,6 +524,16 @@ export default function Today({ reloadSignal = 0 }) {
         <p className="mt-2 px-1 text-xs text-neutral-400">
           Breaks are tracked separately and never appear in the EOD report.
         </p>
+      </section>
+
+      {/* End-of-day report */}
+      <section className="mt-4 flex justify-end">
+        <button
+          onClick={onGenerateReport}
+          className="min-h-[44px] rounded-lg bg-accent-light px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 dark:bg-accent-dark dark:text-neutral-900"
+        >
+          Generate EOD report
+        </button>
       </section>
 
       {showFinish && ongoing && (

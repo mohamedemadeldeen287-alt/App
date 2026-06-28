@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Today from "./screens/Today.jsx";
 import Calendar from "./screens/Calendar.jsx";
+import Report from "./screens/Report.jsx";
 import EventConfirm from "./components/EventConfirm.jsx";
 import { listEvents, markMissed, confirmOngoing } from "./lib/events.js";
 import { showEventReminder } from "./lib/push.js";
@@ -10,7 +11,7 @@ import { useNow } from "./lib/useNow.js";
 const NAV = [
   { key: "today", label: "Today" },
   { key: "calendar", label: "Calendar" },
-  { key: "report", label: "Report", soon: true },
+  { key: "report", label: "Report" },
 ];
 
 function NavButton({ item, active, onClick, layout }) {
@@ -44,6 +45,7 @@ export default function App() {
   const [events, setEvents] = useState([]);
   const [confirmState, setConfirmState] = useState(null); // { event, startAtYes }
   const [reloadSignal, setReloadSignal] = useState(0);
+  const [reportSignal, setReportSignal] = useState(0);
   const [eventToast, setEventToast] = useState(null);
   const firedRef = useRef(new Map());
   const toastTimer = useRef(null);
@@ -66,6 +68,13 @@ export default function App() {
   }, []);
 
   const bumpReload = useCallback(() => setReloadSignal((n) => n + 1), []);
+
+  // Today's "Generate EOD report" button jumps to the Report tab and kicks off
+  // generation there.
+  const openReport = useCallback(() => {
+    setTab("report");
+    setReportSignal((n) => n + 1);
+  }, []);
 
   const resolveConfirm = useCallback(async () => {
     setConfirmState(null);
@@ -145,7 +154,7 @@ export default function App() {
       {/* Main content — both screens stay mounted so timers/state persist. */}
       <main className="min-w-0 flex-1">
         <div className={tab === "today" ? "" : "hidden"}>
-          <Today reloadSignal={reloadSignal} />
+          <Today reloadSignal={reloadSignal} onGenerateReport={openReport} />
         </div>
         <div className={tab === "calendar" ? "" : "hidden"}>
           <Calendar
@@ -153,6 +162,9 @@ export default function App() {
             onChanged={loadEvents}
             onConfirm={(ev) => setConfirmState({ event: ev, startAtYes: false })}
           />
+        </div>
+        <div className={tab === "report" ? "" : "hidden"}>
+          <Report generateSignal={reportSignal} />
         </div>
       </main>
 
