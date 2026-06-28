@@ -5,13 +5,14 @@ daily break budget, and auto-generating an end-of-day report to review and send
 manually. Built with React + Vite, Tailwind, and Supabase. All times are handled
 in **America/New_York**.
 
-> **Status:** Steps 1–4 of a staged build. The clickable **Today** screen
-> (manual task start / finish) is in place; all time handling runs through a
-> single `America/New_York` utility (`src/lib/time.js`); **break tracking** is
-> live; and **in-app nudges** prompt you during shift hours on a configurable
-> interval. It runs on a localStorage fallback out of the box, and uses Supabase
-> once you add credentials. Later steps turn the nudges into Web Push and add
-> the calendar and the EOD report generator.
+> **Status:** Steps 1–6 of a staged build. In place: the **Today** screen
+> (manual task start / finish); a single `America/New_York` time utility
+> (`src/lib/time.js`); **break tracking**; **in-app nudges** plus **Web Push**
+> notifications with action buttons; and a **Calendar** tab with planned events,
+> before/at-time reminders, and a "Did this happen?" confirmation that links
+> into your log. It runs on a localStorage fallback out of the box, and uses
+> Supabase once you add credentials. The remaining step is the EOD report
+> generator (plus dark-mode / PWA polish).
 
 ## Run it locally
 
@@ -93,6 +94,13 @@ pushes when the app is fully closed:
   When the tab is hidden the app raises the notification locally; a Supabase
   Edge Function (`supabase/functions/send-nudge-push`) is included to deliver
   pushes when the app is fully closed.
+- **Calendar**: plan events with a title, an Eastern date/time, and a reminder
+  lead (default 20 min). Each event fires two reminders — one at
+  `scheduled − lead` and one at the time. The at-time prompt asks *Did this
+  happen?*: **Yes** confirms start/end and creates a linked entry that shows in
+  the log; **No** marks it missed (nothing logged); **Still ongoing** starts a
+  linked ongoing task. The list groups events by day with pending / happened /
+  missed / ongoing badges.
 
 ## Project layout
 
@@ -104,6 +112,7 @@ worklog/
       supabase.js       Supabase client (env-driven, optional)
       entries.js        entries data layer (Supabase or localStorage)
       breaks.js         break_log data layer (budget tracking)
+      events.js         planned_events data layer (calendar)
       time.js           America/New_York time utility (single source of truth)
       settings.js       local user settings (nudge interval)
       push.js           service-worker registration + Web Push subscription
@@ -113,8 +122,11 @@ worklog/
       FinishFlow.jsx    finish → what's-next modal
       NudgeBanner.jsx   periodic in-app check-in
       SettingsModal.jsx nudge interval + notifications
-    screens/Today.jsx   the main screen
-    App.jsx             adaptive nav shell
+      EventConfirm.jsx  "Did this happen?" confirmation
+    screens/
+      Today.jsx         the main screen
+      Calendar.jsx      planned events + reminders
+    App.jsx             adaptive nav shell + reminder scheduler
   public/sw.js          service worker (push + notification actions)
   supabase/
     schema.sql          full DB schema (all tables, for later steps too)

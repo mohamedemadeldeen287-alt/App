@@ -44,9 +44,11 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      tag: "worklog-nudge",
+      tag: payload.tag || "worklog-nudge",
       renotify: true,
-      actions: actionsFor(ongoing),
+      // Server payloads may specify their own actions (e.g. event reminders);
+      // otherwise fall back to the nudge actions.
+      actions: payload.actions || actionsFor(ongoing),
       data: payload,
     })
   );
@@ -67,7 +69,12 @@ self.addEventListener("notificationclick", (event) => {
       } else {
         client = await self.clients.openWindow("/");
       }
-      if (client) client.postMessage({ type: "nudge-action", action });
+      if (client)
+        client.postMessage({
+          type: "nudge-action",
+          action,
+          data: event.notification.data || {},
+        });
     })()
   );
 });

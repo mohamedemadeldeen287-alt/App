@@ -1,4 +1,5 @@
 import { supabase, supabaseConfigured } from "./supabase.js";
+import { formatClock } from "./time.js";
 
 // Web Push + notifications client.
 //
@@ -107,5 +108,34 @@ export async function showLocalNudge(ongoing) {
       data: { ongoing: isOngoing },
     }
   );
+  return true;
+}
+
+// Event reminder notification. kind "lead" is informational; kind "at" carries
+// the confirmation actions (Yes / No — "Still ongoing" is offered in-app, since
+// Android shows a limited number of action buttons).
+export async function showEventReminder(event, kind) {
+  if (getPermission() !== "granted") return false;
+  const reg = await registerServiceWorker();
+  if (!reg) return false;
+  if (kind === "lead") {
+    await reg.showNotification(`Upcoming: ${event.title}`, {
+      body: `Starts at ${formatClock(event.scheduled_at)} ET`,
+      tag: `worklog-event-${event.id}`,
+      renotify: true,
+      data: { eventId: event.id, kind: "lead" },
+    });
+  } else {
+    await reg.showNotification(`Did this happen? “${event.title}”`, {
+      body: "Confirm so it's logged correctly.",
+      tag: `worklog-event-${event.id}`,
+      renotify: true,
+      actions: [
+        { action: "event_yes", title: "Yes" },
+        { action: "event_no", title: "No" },
+      ],
+      data: { eventId: event.id, kind: "at" },
+    });
+  }
   return true;
 }

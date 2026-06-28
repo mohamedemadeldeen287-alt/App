@@ -129,3 +129,16 @@ export async function finishEntry(id, endTimeIso) {
     end_time: endTimeIso,
   });
 }
+
+// Create a task entry with explicit fields — used by the calendar flow to turn
+// a confirmed planned event into a real entry. Returns the created row.
+export async function createTaskEntry({ name, start_time, end_time = null, status }) {
+  return backend.insert({
+    type: "task",
+    name: (name || "").trim(),
+    start_time,
+    end_time,
+    status,
+    include_in_report: true,
+  });
+}

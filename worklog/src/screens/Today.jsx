@@ -51,7 +51,7 @@ function breakSeconds(b, nowMs) {
   return Math.max(0, (nowMs - Date.parse(b.start_time)) / 1000);
 }
 
-export default function Today() {
+export default function Today({ reloadSignal = 0 }) {
   const [entries, setEntries] = useState([]);
   const [ongoing, setOngoing] = useState(null);
   const [todayBreaks, setTodayBreaks] = useState([]);
@@ -103,6 +103,12 @@ export default function Today() {
       clearTimeout(toastTimer.current);
     };
   }, [refresh]);
+
+  // Reload when something outside this screen changes our data (e.g. a calendar
+  // event was confirmed into an entry).
+  useEffect(() => {
+    if (reloadSignal) refresh();
+  }, [reloadSignal, refresh]);
 
   const showToast = useCallback((type, msg) => {
     setToast({ type, msg });
