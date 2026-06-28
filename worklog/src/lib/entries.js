@@ -1,4 +1,5 @@
 import { supabase, supabaseConfigured } from "./supabase.js";
+import { nowUtcIso, isSameShiftDay } from "./time.js";
 
 // Data layer for the `entries` table.
 //
@@ -6,9 +7,9 @@ import { supabase, supabaseConfigured } from "./supabase.js";
 //   - Supabase (when VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY are set)
 //   - localStorage fallback (so Step 1 is clickable with zero setup)
 //
-// All timestamps are stored as UTC ISO strings (new Date().toISOString()).
-// "Today" filtering currently uses the device's calendar day; this gets
-// retrofitted to America/New_York in Step 2 via lib/time.
+// All timestamps are stored as UTC ISO strings. Both the write side (now) and
+// "today" filtering go through lib/time, so everything is anchored to the
+// America/New_York shift-day regardless of the device's timezone.
 
 const LS_KEY = "worklog.entries.v1";
 
@@ -31,7 +32,7 @@ const localBackend = {
   async insert(row) {
     const full = {
       id: crypto.randomUUID(),
-      created_at: new Date().toISOString(),
+      created_at: nowUtcIso(),
       end_time: null,
       name: null,
       ...row,
@@ -88,20 +89,10 @@ export const usingLocalFallback = !supabaseConfigured;
 
 /* ------------------------------ public API ------------------------------ */
 
-// Same calendar day as `ref` (local time for Step 1).
-function isSameDay(iso, ref) {
-  const d = new Date(iso);
-  return (
-    d.getFullYear() === ref.getFullYear() &&
-    d.getMonth() === ref.getMonth() &&
-    d.getDate() === ref.getDate()
-  );
-}
-
+// Entries whose start falls on today's America/New_York shift-day.
 export async function listTodayEntries() {
   const all = await backend.list();
-  const now = new Date();
-  return all.filter((r) => isSameDay(r.start_time, now));
+  return all.filter((r) => isSameShiftDay(r.start_time));
 }
 
 // The single active task/idle entry, if any (breaks are tracked separately).
@@ -114,7 +105,7 @@ export async function startTask(name) {
   return backend.insert({
     type: "task",
     name: name.trim(),
-    start_time: new Date().toISOString(),
+    start_time: nowUtcIso(),
     status: "ongoing",
     include_in_report: true,
   });
@@ -125,7 +116,7 @@ export async function startIdle() {
   return backend.insert({
     type: "idle",
     name: null,
-    start_time: new Date().toISOString(),
+    start_time: nowUtcIso(),
     status: "no_tasks_pending",
     include_in_report: false,
   });

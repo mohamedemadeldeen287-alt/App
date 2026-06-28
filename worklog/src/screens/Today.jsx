@@ -5,25 +5,16 @@ import {
   startTask,
   usingLocalFallback,
 } from "../lib/entries.js";
-import { SHIFT_SCHEDULE } from "../config/shift.js";
-import { fmtClock, fmtDateLong, fmtElapsed } from "../lib/format.js";
+import { fmtElapsed } from "../lib/format.js";
+import {
+  formatClock,
+  formatDateLong,
+  formatNowET,
+  shiftFor,
+  isWithinShiftHours,
+} from "../lib/time.js";
 import { useNow } from "../lib/useNow.js";
 import FinishFlow from "../components/FinishFlow.jsx";
-
-const WEEKDAYS = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-];
-
-function todayShift() {
-  // Step 1: local weekday. Becomes America/New_York in Step 2.
-  return SHIFT_SCHEDULE[WEEKDAYS[new Date().getDay()]] || null;
-}
 
 export default function Today() {
   const [entries, setEntries] = useState([]);
@@ -71,7 +62,8 @@ export default function Today() {
     flashTimer.current = setTimeout(() => setStillFlash(false), 1800);
   }
 
-  const shift = todayShift();
+  const shift = shiftFor();
+  const inShift = isWithinShiftHours();
   const reportEntries = entries.filter((e) => e.include_in_report);
   const taskCount = entries.filter((e) => e.type === "task").length;
   const ongoingSeconds = ongoing
@@ -84,10 +76,14 @@ export default function Today() {
       <header className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-            {fmtDateLong()}
+            {formatDateLong()}
           </h1>
           <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
-            {shift ? `Shift ${shift.start}–${shift.end} ET` : "No shift today"}
+            {formatNowET()}
+            {" · "}
+            {shift
+              ? `shift ${shift.start}–${shift.end} ET · ${inShift ? "in shift" : "off shift"}`
+              : "no shift today"}
           </p>
         </div>
         {/* Break button — visual placeholder, wired up in Step 3. */}
@@ -120,7 +116,7 @@ export default function Today() {
                 ongoing
               </span>
               <span className="text-xs text-neutral-400">
-                started {fmtClock(ongoing.start_time)}
+                started {formatClock(ongoing.start_time)}
               </span>
             </div>
             <h2 className="mt-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
@@ -208,7 +204,7 @@ export default function Today() {
                       {e.name || "(untitled)"}
                     </p>
                     <p className="text-xs text-neutral-400">
-                      {fmtClock(e.start_time)} – {e.end_time ? fmtClock(e.end_time) : "now"}
+                      {formatClock(e.start_time)} – {e.end_time ? formatClock(e.end_time) : "now"}
                     </p>
                   </div>
                   {e.status === "ongoing" ? (

@@ -5,11 +5,13 @@ daily break budget, and auto-generating an end-of-day report to review and send
 manually. Built with React + Vite, Tailwind, and Supabase. All times are handled
 in **America/New_York**.
 
-> **Status:** Step 1 of a staged build. This step is the clickable **Today**
-> screen with manual task start / finish. It runs on a localStorage fallback out
-> of the box, and uses Supabase once you add credentials. Later steps add the
-> timezone utility, break tracking, nudges, web push, the calendar, and the EOD
-> report generator.
+> **Status:** Steps 1–2 of a staged build. The clickable **Today** screen
+> (manual task start / finish) is in place, and all time handling now runs
+> through a single `America/New_York` utility (`src/lib/time.js`) — display,
+> the shift-day, and the timestamp picker are anchored to Eastern regardless of
+> the device's timezone. It runs on a localStorage fallback out of the box, and
+> uses Supabase once you add credentials. Later steps add break tracking,
+> nudges, web push, the calendar, and the EOD report generator.
 
 ## Run it locally
 
@@ -51,6 +53,8 @@ flow.
 - Today's timeline of reportable entries, plus a "tasks today" tile.
 - Adaptive layout chrome: sidebar nav on desktop, bottom nav on mobile.
   Dark mode follows your system preference.
+- All times shown in **America/New_York** (header clock, timeline, the finish
+  picker, and the shift-day used for "today"), independent of device timezone.
 
 ## Project layout
 

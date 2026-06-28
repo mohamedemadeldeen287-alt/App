@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { finishEntry, startTask, startIdle } from "../lib/entries.js";
-import { isoToLocalInput, localInputToIso } from "../lib/format.js";
+import { isoToLocalInput, localInputToIso } from "../lib/time.js";
 
 // Two-step finish flow:
 //   1. Confirm / edit the exact end timestamp for the task being finished.
@@ -61,7 +61,7 @@ export default function FinishFlow({ entry, onDone, onCancel }) {
               Confirm when this task actually ended — adjust if it wasn't just now.
             </p>
             <label className="mt-4 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              End time
+              End time (Eastern)
               <input
                 type="datetime-local"
                 value={endLocal}
