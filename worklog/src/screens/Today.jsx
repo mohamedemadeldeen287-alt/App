@@ -3,6 +3,7 @@ import {
   listTodayEntries,
   getOngoingEntry,
   startTask,
+  startIdle,
   usingLocalFallback,
 } from "../lib/entries.js";
 import {
@@ -11,6 +12,7 @@ import {
   startBreak,
   endBreak,
 } from "../lib/breaks.js";
+import { getSettings, saveSettings } from "../lib/settings.js";
 import { fmtElapsed, fmtMins } from "../lib/format.js";
 import {
   formatClock,
@@ -26,6 +28,8 @@ import {
 } from "../config/shift.js";
 import { useNow } from "../lib/useNow.js";
 import FinishFlow from "../components/FinishFlow.jsx";
+import NudgeBanner from "../components/NudgeBanner.jsx";
+import SettingsModal from "../components/SettingsModal.jsx";
 
 const BUDGET_SEC = DAILY_BREAK_BUDGET_MINUTES * 60;
 
@@ -52,10 +56,23 @@ export default function Today() {
   const [stillFlash, setStillFlash] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null);
+  const [settings, setSettings] = useState(getSettings);
+  const [showSettings, setShowSettings] = useState(false);
+  const [nudgeOpen, setNudgeOpen] = useState(false);
   const flashTimer = useRef(null);
   const toastTimer = useRef(null);
   const warnRef = useRef({ day: null, low: false, over: false });
+  const lastActivityRef = useRef(Date.now());
+  const startInputRef = useRef(null);
   const now = useNow(1000);
+
+  const nudgeIntervalMs = settings.nudgeIntervalMinutes * 60 * 1000;
+
+  // Any meaningful action resets the nudge countdown and clears an open nudge.
+  const bumpActivity = useCallback(() => {
+    lastActivityRef.current = Date.now();
+    setNudgeOpen(false);
+  }, []);
 
   const refresh = useCallback(async () => {
     const [list, active, breaks, open] = await Promise.all([
@@ -91,6 +108,7 @@ export default function Today() {
     try {
       await startTask(startName);
       setStartName("");
+      bumpActivity();
       await refresh();
     } finally {
       setBusy(false);
@@ -98,19 +116,36 @@ export default function Today() {
   }
 
   function handleStillWorking() {
-    // No nudges yet — this just acknowledges. It will reset the nudge timer
-    // once the nudge system lands (Step 4).
+    // Acknowledge and reset the nudge countdown.
+    bumpActivity();
     setStillFlash(true);
     clearTimeout(flashTimer.current);
     flashTimer.current = setTimeout(() => setStillFlash(false), 1800);
   }
 
-  async function handleTakeBreak() {
-    if (busy || openBreak) return;
+  // Idle nudge: "Nothing" — log/refresh an idle entry (kept out of the report).
+  async function handleNothing() {
+    bumpActivity();
     setBusy(true);
     try {
-      // Suppresses nudges while the break is open (nudge system arrives in
-      // Step 4) and pauses the active task's elapsed display (derived below).
+      await startIdle();
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Idle nudge: jump to starting a task.
+  function handleNudgeStartTask() {
+    bumpActivity();
+    startInputRef.current?.focus();
+  }
+
+  async function handleTakeBreak() {
+    if (busy || openBreak) return;
+    setNudgeOpen(false); // suppress nudges while on a break
+    setBusy(true);
+    try {
       await startBreak();
       await refresh();
     } finally {
@@ -123,6 +158,7 @@ export default function Today() {
     setBusy(true);
     try {
       await endBreak(openBreak.id, openBreak.start_time);
+      bumpActivity(); // restart the nudge countdown after the break
       await refresh();
     } finally {
       setBusy(false);
@@ -177,6 +213,17 @@ export default function Today() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usedSecFloor, dayKey]);
 
+  // Periodic nudge: only during shift hours, never on a break, fires once the
+  // configured interval has elapsed since the last activity (task ongoing or
+  // idle both qualify). Surfaces as an in-app banner here; becomes a Web Push
+  // notification with the same actions in Step 5.
+  useEffect(() => {
+    if (nudgeOpen || onBreak || !isWithinShiftHours()) return;
+    if (Date.now() - lastActivityRef.current >= nudgeIntervalMs) {
+      setNudgeOpen(true);
+    }
+  }, [now, onBreak, nudgeOpen, nudgeIntervalMs]);
+
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-28 pt-5 md:pb-10">
       {/* Header */}
@@ -194,6 +241,7 @@ export default function Today() {
           </p>
         </div>
 
+        <div className="flex items-start gap-2">
         {/* Break control: red while working, green while on a break. */}
         {onBreak ? (
           <div className="flex flex-col items-end gap-1">
@@ -217,7 +265,34 @@ export default function Today() {
             Take a break
           </button>
         ) : null}
+          <button
+            onClick={() => setShowSettings(true)}
+            aria-label="Settings"
+            title="Settings"
+            className="min-h-[44px] rounded-lg border border-neutral-300 px-2.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+        </div>
       </header>
+
+      {/* Periodic check-in nudge */}
+      {nudgeOpen && !onBreak && (
+        <NudgeBanner
+          ongoing={ongoing}
+          onStillWorking={handleStillWorking}
+          onFinished={() => {
+            setNudgeOpen(false);
+            setShowFinish(true);
+          }}
+          onStartTask={handleNudgeStartTask}
+          onNothing={handleNothing}
+          onDismiss={bumpActivity}
+        />
+      )}
 
       {/* Budget warning banner */}
       {toast && (
@@ -304,6 +379,7 @@ export default function Today() {
             </h2>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <input
+                ref={startInputRef}
                 value={startName}
                 onChange={(e) => setStartName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleStart()}
@@ -408,8 +484,20 @@ export default function Today() {
           onCancel={() => setShowFinish(false)}
           onDone={async () => {
             setShowFinish(false);
+            bumpActivity();
             await refresh();
           }}
+        />
+      )}
+
+      {showSettings && (
+        <SettingsModal
+          settings={settings}
+          onSave={(patch) => {
+            setSettings(saveSettings(patch));
+            setShowSettings(false);
+          }}
+          onClose={() => setShowSettings(false)}
         />
       )}
     </div>

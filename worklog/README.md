@@ -5,13 +5,13 @@ daily break budget, and auto-generating an end-of-day report to review and send
 manually. Built with React + Vite, Tailwind, and Supabase. All times are handled
 in **America/New_York**.
 
-> **Status:** Steps 1–3 of a staged build. The clickable **Today** screen
+> **Status:** Steps 1–4 of a staged build. The clickable **Today** screen
 > (manual task start / finish) is in place; all time handling runs through a
-> single `America/New_York` utility (`src/lib/time.js`); and **break tracking**
-> is live — take a break / resume, a paused task timer, a daily budget badge,
-> and budget warnings. It runs on a localStorage fallback out of the box, and
-> uses Supabase once you add credentials. Later steps add nudges, web push, the
-> calendar, and the EOD report generator.
+> single `America/New_York` utility (`src/lib/time.js`); **break tracking** is
+> live; and **in-app nudges** prompt you during shift hours on a configurable
+> interval. It runs on a localStorage fallback out of the box, and uses Supabase
+> once you add credentials. Later steps turn the nudges into Web Push and add
+> the calendar and the EOD report generator.
 
 ## Run it locally
 
@@ -61,6 +61,11 @@ flow.
   against the 1h 42m daily budget, and on-screen warnings fire near the limit
   (~11 min left) and once over budget. Break data is kept entirely out of the
   EOD report.
+- **Nudges**: a periodic in-app check-in that only appears during shift hours
+  and never while on a break. When a task is ongoing it offers *Still working* /
+  *Finished*; when idle it offers *Start a task* / *Nothing*. Any action resets
+  the countdown. The interval is configurable (gear icon → Settings, default
+  45 min). In Step 5 this becomes a Web Push notification with the same actions.
 
 ## Project layout
 
@@ -73,10 +78,14 @@ worklog/
       entries.js        entries data layer (Supabase or localStorage)
       breaks.js         break_log data layer (budget tracking)
       time.js           America/New_York time utility (single source of truth)
+      settings.js       local user settings (nudge interval)
       format.js         timezone-independent display helpers
       useNow.js         live-tick hook for elapsed timers
-    components/FinishFlow.jsx   finish → what's-next modal
-    screens/Today.jsx   the Step 1 main screen
+    components/
+      FinishFlow.jsx    finish → what's-next modal
+      NudgeBanner.jsx   periodic in-app check-in
+      SettingsModal.jsx nudge-interval settings
+    screens/Today.jsx   the main screen
     App.jsx             adaptive nav shell
   supabase/schema.sql   full DB schema (all tables, for later steps too)
 ```
