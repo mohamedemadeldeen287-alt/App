@@ -41,6 +41,26 @@ flow.
 4. Restart `npm run dev`. The app now reads and writes the `entries` table and
    the banner about local storage disappears.
 
+## Enable Web Push (optional)
+
+In-app nudges and local (tab-open) notifications need no setup. To receive
+pushes when the app is fully closed:
+
+1. Generate a VAPID key pair (once): `npx web-push generate-vapid-keys`.
+2. Put the **public** key in `.env` as `VITE_VAPID_PUBLIC_KEY` and rebuild.
+3. Set the Edge Function secrets and deploy it:
+   ```bash
+   supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@example.com
+   supabase functions deploy send-nudge-push
+   ```
+4. In the app, open Settings → **Enable notifications** and accept the prompt.
+   The device's push subscription is stored in `push_subscriptions`.
+5. Trigger `send-nudge-push` (e.g. from a scheduled job during shift hours) to
+   deliver a nudge.
+
+> Notifications target Android Chrome, which supports notification action
+> buttons natively. iOS Safari push is intentionally out of scope.
+
 ## What works in Step 1
 
 - Start a task (becomes the single active entry).
@@ -65,7 +85,14 @@ flow.
   and never while on a break. When a task is ongoing it offers *Still working* /
   *Finished*; when idle it offers *Start a task* / *Nothing*. Any action resets
   the countdown. The interval is configurable (gear icon → Settings, default
-  45 min). In Step 5 this becomes a Web Push notification with the same actions.
+  45 min).
+- **Notifications (Web Push)**: enable from Settings to also receive nudges as
+  system notifications with the same action buttons (built for Android Chrome).
+  A service worker (`public/sw.js`) shows the notification and routes a tapped
+  action back into the app — e.g. *Finished* opens the timestamp-edit flow.
+  When the tab is hidden the app raises the notification locally; a Supabase
+  Edge Function (`supabase/functions/send-nudge-push`) is included to deliver
+  pushes when the app is fully closed.
 
 ## Project layout
 
@@ -79,13 +106,17 @@ worklog/
       breaks.js         break_log data layer (budget tracking)
       time.js           America/New_York time utility (single source of truth)
       settings.js       local user settings (nudge interval)
+      push.js           service-worker registration + Web Push subscription
       format.js         timezone-independent display helpers
       useNow.js         live-tick hook for elapsed timers
     components/
       FinishFlow.jsx    finish → what's-next modal
       NudgeBanner.jsx   periodic in-app check-in
-      SettingsModal.jsx nudge-interval settings
+      SettingsModal.jsx nudge interval + notifications
     screens/Today.jsx   the main screen
     App.jsx             adaptive nav shell
-  supabase/schema.sql   full DB schema (all tables, for later steps too)
+  public/sw.js          service worker (push + notification actions)
+  supabase/
+    schema.sql          full DB schema (all tables, for later steps too)
+    functions/send-nudge-push/  Edge Function to deliver Web Push
 ```

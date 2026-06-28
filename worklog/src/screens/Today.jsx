@@ -26,6 +26,12 @@ import {
   DAILY_BREAK_BUDGET_MINUTES,
   BREAK_WARNING_THRESHOLD_MINUTES_LEFT,
 } from "../config/shift.js";
+import {
+  registerServiceWorker,
+  enableNotifications,
+  getPermission,
+  showLocalNudge,
+} from "../lib/push.js";
 import { useNow } from "../lib/useNow.js";
 import FinishFlow from "../components/FinishFlow.jsx";
 import NudgeBanner from "../components/NudgeBanner.jsx";
@@ -59,11 +65,13 @@ export default function Today() {
   const [settings, setSettings] = useState(getSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [nudgeOpen, setNudgeOpen] = useState(false);
+  const [notifPermission, setNotifPermission] = useState(getPermission);
   const flashTimer = useRef(null);
   const toastTimer = useRef(null);
   const warnRef = useRef({ day: null, low: false, over: false });
   const lastActivityRef = useRef(Date.now());
   const startInputRef = useRef(null);
+  const routeRef = useRef(() => {});
   const now = useNow(1000);
 
   const nudgeIntervalMs = settings.nudgeIntervalMinutes * 60 * 1000;
@@ -221,8 +229,42 @@ export default function Today() {
     if (nudgeOpen || onBreak || !isWithinShiftHours()) return;
     if (Date.now() - lastActivityRef.current >= nudgeIntervalMs) {
       setNudgeOpen(true);
+      // If the app isn't in the foreground, also raise a system notification
+      // with action buttons so the nudge is actionable from outside the tab.
+      if (typeof document !== "undefined" && document.hidden) {
+        showLocalNudge(ongoing);
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [now, onBreak, nudgeOpen, nudgeIntervalMs]);
+
+  // Register the service worker and route action messages it sends when the
+  // user taps a notification button. routeRef always holds the latest handlers.
+  routeRef.current = (action) => {
+    if (action === "still_working") handleStillWorking();
+    else if (action === "finished") {
+      setNudgeOpen(false);
+      setShowFinish(true);
+    } else if (action === "nothing") handleNothing();
+    else if (action === "start_task") handleNudgeStartTask();
+    else bumpActivity();
+  };
+  useEffect(() => {
+    registerServiceWorker().catch(() => {});
+    const sw = navigator.serviceWorker;
+    if (!sw) return;
+    const onMessage = (e) => {
+      if (e.data && e.data.type === "nudge-action") routeRef.current(e.data.action);
+    };
+    sw.addEventListener("message", onMessage);
+    return () => sw.removeEventListener("message", onMessage);
+  }, []);
+
+  async function handleEnableNotifications() {
+    const res = await enableNotifications();
+    setNotifPermission(getPermission());
+    return res;
+  }
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-28 pt-5 md:pb-10">
@@ -493,6 +535,8 @@ export default function Today() {
       {showSettings && (
         <SettingsModal
           settings={settings}
+          notifPermission={notifPermission}
+          onEnableNotifications={handleEnableNotifications}
           onSave={(patch) => {
             setSettings(saveSettings(patch));
             setShowSettings(false);

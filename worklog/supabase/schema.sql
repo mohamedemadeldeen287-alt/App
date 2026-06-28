@@ -38,6 +38,14 @@ create table if not exists break_log (
   created_at timestamptz not null default now()
 );
 
+-- Web Push subscriptions (one row per device/browser). The Edge Function reads
+-- these to deliver nudges via the Web Push protocol.
+create table if not exists push_subscriptions (
+  endpoint text primary key,
+  subscription jsonb not null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists entries_start_time_idx on entries (start_time);
 create index if not exists planned_events_scheduled_at_idx on planned_events (scheduled_at);
 create index if not exists break_log_break_date_idx on break_log (break_date);
