@@ -1,0 +1,13 @@
+[
+  {
+    "//": "Digital Asset Links: lets the installed Android app (TWA) open your site full-screen without a browser address bar. Replace the package_name if you change it, and paste your APK signing key's SHA-256 fingerprint below (printed by `bubblewrap fingerprint` or PWABuilder). Then redeploy so this is served at https://YOUR-DOMAIN/.well-known/assetlinks.json",
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.worklog.twa",
+      "sha256_cert_fingerprints": [
+        "REPLACE_WITH_YOUR_APK_SIGNING_SHA256_FINGERPRINT"
+      ]
+    }
+  }
+]

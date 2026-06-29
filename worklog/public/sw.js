@@ -7,10 +7,67 @@
  * opens the timestamp-edit + what's-next flow).
  */
 
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (event) =>
-  event.waitUntil(self.clients.claim())
-);
+// Bump this when the cached app shell should be refreshed.
+const CACHE = "worklog-shell-v1";
+const SHELL = [
+  "/",
+  "/index.html",
+  "/manifest.webmanifest",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/apple-touch-180.png",
+];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {})
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+      await self.clients.claim();
+    })()
+  );
+});
+
+// Offline support:
+//  - navigations: network-first, fall back to the cached app shell
+//  - same-origin GET assets: stale-while-revalidate
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  if (request.method !== "GET") return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches.match("/index.html").then((r) => r || caches.match("/"))
+      )
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      const network = fetch(request)
+        .then((resp) => {
+          if (resp && resp.ok) {
+            const copy = resp.clone();
+            caches.open(CACHE).then((c) => c.put(request, copy));
+          }
+          return resp;
+        })
+        .catch(() => cached);
+      return cached || network;
+    })
+  );
+});
 
 function actionsFor(ongoing) {
   return ongoing

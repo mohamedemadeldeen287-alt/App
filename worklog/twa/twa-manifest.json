@@ -1,0 +1,28 @@
+{
+  "//": "Bubblewrap config to wrap the deployed PWA as an Android app (.apk/.aab). Replace YOUR-DOMAIN with the host where you deploy the app, then run `bubblewrap build` (see README → Build an Android app). See https://github.com/GoogleChromeLabs/bubblewrap",
+  "packageId": "app.worklog.twa",
+  "host": "YOUR-DOMAIN",
+  "name": "Work Log & EOD Report",
+  "launcherName": "Work Log",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#185FA5",
+  "themeColorDark": "#0B1220",
+  "navigationColor": "#185FA5",
+  "navigationColorDark": "#0B1220",
+  "backgroundColor": "#F1E7D6",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://YOUR-DOMAIN/icons/icon-512.png",
+  "maskableIconUrl": "https://YOUR-DOMAIN/icons/icon-maskable-512.png",
+  "webManifestUrl": "https://YOUR-DOMAIN/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "appVersionName": "1",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "worklog"
+  },
+  "features": {}
+}

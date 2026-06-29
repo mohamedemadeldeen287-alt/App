@@ -13,7 +13,8 @@ in **America/New_York**.
 > into your log; and an **EOD report** generator (Claude-written via an Edge
 > Function, with a local fallback) that you review and send manually. It runs on
 > a localStorage fallback out of the box, and uses Supabase once you add
-> credentials. What's left is polish (PWA install, layout/dark-mode refinements).
+> credentials. It is also an **installable PWA** (offline-capable, home-screen
+> install) and can be wrapped as an Android **.apk** (see below).
 
 ## Run it locally
 
@@ -78,6 +79,64 @@ reports:
 
 The key stays server-side in the Edge Function — it is never exposed to the
 browser.
+
+## Install on Android (PWA)
+
+Once the app is deployed to a public **HTTPS** URL, open that URL in **Chrome on
+Android** and use the browser menu → **Install app** / **Add to Home screen**
+(or the in-app **Settings → Install app** button). It then launches full-screen
+from your home screen and works offline after the first load.
+
+> Installation requires a secure (HTTPS) origin — `localhost` or a `http://`
+> LAN address will not offer install. Deploy first (any static host works:
+> Vercel, Netlify, Cloudflare Pages, GitHub Pages…), serving the contents of
+> `dist/` after `npm run build`.
+
+## Build an Android app (.apk)
+
+To get a real installable `.apk` (or an `.aab` for the Play Store), wrap the
+deployed PWA in a **Trusted Web Activity (TWA)**. Two routes:
+
+### Option A — PWABuilder (easiest, no local Android tooling)
+
+1. Deploy the app to your HTTPS URL.
+2. Go to [pwabuilder.com](https://www.pwabuilder.com), enter the URL, and choose
+   **Package For Stores → Android**. Download the package — it includes the
+   signed `.apk`/`.aab`, the signing key, and a generated `assetlinks.json`.
+3. Put that `assetlinks.json` at `public/.well-known/assetlinks.json` and
+   redeploy (a template is already in this repo — replace the fingerprint).
+4. Transfer the `.apk` to your phone and open it to install (enable "install
+   unknown apps" for your file manager), or upload the `.aab` to Play Console.
+
+### Option B — Bubblewrap CLI (local)
+
+Prerequisites: Node, a JDK, and the Android SDK (Bubblewrap can install the JDK
+and Android SDK for you on first run).
+
+```bash
+npm i -g @bubblewrap/cli
+# Initialise from the deployed manifest (or edit twa/twa-manifest.json first):
+bubblewrap init --manifest https://YOUR-DOMAIN/manifest.webmanifest
+bubblewrap build         # produces app-release-signed.apk (+ .aab)
+bubblewrap fingerprint   # prints the SHA-256 to paste into assetlinks.json
+```
+
+A ready-to-edit Bubblewrap config is provided at
+[`twa/twa-manifest.json`](./twa/twa-manifest.json) — replace `YOUR-DOMAIN` and
+the `packageId` if you want a custom one.
+
+### Digital Asset Links (removes the URL bar)
+
+For the installed app to open full-screen (no browser address bar), the signing
+key's SHA-256 fingerprint must be served at
+`https://YOUR-DOMAIN/.well-known/assetlinks.json`. This repo ships a template at
+[`public/.well-known/assetlinks.json`](./public/.well-known/assetlinks.json) —
+paste your fingerprint (from `bubblewrap fingerprint` or PWABuilder) and the
+correct `package_name`, then redeploy.
+
+> The `.apk` itself must be built against your **deployed** URL and signed with
+> your **own** keystore, so this final step happens after you deploy — it can't
+> be produced from a local dev server.
 
 ## What works in Step 1
 
@@ -152,7 +211,12 @@ worklog/
       Calendar.jsx      planned events + reminders
       Report.jsx        EOD report review screen
     App.jsx             adaptive nav shell + reminder scheduler
-  public/sw.js          service worker (push + notification actions)
+  public/
+    sw.js               service worker (offline cache + push + notif actions)
+    manifest.webmanifest  PWA manifest (installable)
+    icons/              app icons (192/512/maskable/apple-touch)
+    .well-known/assetlinks.json  Digital Asset Links template (for the TWA)
+  twa/twa-manifest.json  Bubblewrap config to build the Android .apk
   supabase/
     schema.sql          full DB schema (all tables, for later steps too)
     functions/send-nudge-push/      Edge Function to deliver Web Push

@@ -66,6 +66,7 @@ export default function Today({ reloadSignal = 0, onGenerateReport }) {
   const [showSettings, setShowSettings] = useState(false);
   const [nudgeOpen, setNudgeOpen] = useState(false);
   const [notifPermission, setNotifPermission] = useState(getPermission);
+  const [installPrompt, setInstallPrompt] = useState(null);
   const flashTimer = useRef(null);
   const toastTimer = useRef(null);
   const warnRef = useRef({ day: null, low: false, over: false });
@@ -270,6 +271,29 @@ export default function Today({ reloadSignal = 0, onGenerateReport }) {
     const res = await enableNotifications();
     setNotifPermission(getPermission());
     return res;
+  }
+
+  // Capture the browser's install prompt so we can offer an in-app install
+  // button (Android Chrome). Cleared once installed.
+  useEffect(() => {
+    const onPrompt = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    const onInstalled = () => setInstallPrompt(null);
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+
+  async function handleInstall() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
   }
 
   return (
@@ -553,6 +577,8 @@ export default function Today({ reloadSignal = 0, onGenerateReport }) {
           settings={settings}
           notifPermission={notifPermission}
           onEnableNotifications={handleEnableNotifications}
+          canInstall={Boolean(installPrompt)}
+          onInstall={handleInstall}
           onSave={(patch) => {
             setSettings(saveSettings(patch));
             setShowSettings(false);

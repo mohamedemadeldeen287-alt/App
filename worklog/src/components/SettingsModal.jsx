@@ -7,6 +7,8 @@ export default function SettingsModal({
   settings,
   notifPermission,
   onEnableNotifications,
+  canInstall,
+  onInstall,
   onSave,
   onClose,
 }) {
@@ -87,6 +89,32 @@ export default function SettingsModal({
                 {enabling ? "Enabling…" : "Enable notifications"}
               </button>
             </>
+          )}
+        </div>
+
+        {/* Install */}
+        <div className="mt-5 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Install app
+          </p>
+          {canInstall ? (
+            <>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                Add Work Log to your home screen to run it full-screen like a
+                native app.
+              </p>
+              <button
+                onClick={onInstall}
+                className="mt-2 min-h-[44px] rounded-lg bg-accent-light px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 dark:bg-accent-dark dark:text-neutral-900"
+              >
+                Install app
+              </button>
+            </>
+          ) : (
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              On Android Chrome, open this site and use the browser menu →
+              “Install app” / “Add to Home screen”.
+            </p>
           )}
         </div>
 
